@@ -1,0 +1,47 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            # Comma-separated list, e.g. "http://localhost:5173,https://autocare.example.com"
+            allowedOriginPatterns: ${ALLOWED_ORIGINS:http://localhost:5173}
+            allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+            allowedHeaders: "*"
+            maxAge: 3600
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+        - id: booking-service
+          uri: ${BOOKING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/bookings/**,/api/catalog/**
+        - id: ai-service
+          uri: ${AI_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/ai/**
+
+app:
+  jwt:
+    # Must be the same secret auth-service uses to sign tokens.
+    secret: ${JWT_SECRET:dev-only-secret-change-me-please-0123456789}
+  rate-limit:
+    ai:
+      max-requests: ${AI_RATE_LIMIT:10}
+      window-seconds: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

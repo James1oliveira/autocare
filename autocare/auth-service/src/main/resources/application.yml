@@ -1,0 +1,29 @@
+server:
+  port: ${PORT:8081}
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    # Defaults to an in-memory H2 database so the service runs with zero setup.
+    # Docker Compose / production set DB_URL to a PostgreSQL database instead.
+    url: ${DB_URL:jdbc:h2:mem:authdb;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+app:
+  jwt:
+    # Must match the secret used by the API gateway. Override with JWT_SECRET in production.
+    secret: ${JWT_SECRET:dev-only-secret-change-me-please-0123456789}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+  seed-demo-users: ${SEED_DEMO_USERS:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

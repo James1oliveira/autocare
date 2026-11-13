@@ -1,0 +1,74 @@
+# Runs the whole system with one command:  docker compose up --build
+# Then open http://localhost:5173
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: autocare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autocare}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autocare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/auth_db
+      DB_USERNAME: autocare
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-autocare}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your .env file}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  booking-service:
+    build: ./booking-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/booking_db
+      DB_USERNAME: autocare
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-autocare}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai-service:
+    build: ./ai-service
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-not-set}
+      BOOKING_SERVICE_URL: http://booking-service:8082
+    depends_on:
+      - booking-service
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your .env file}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      BOOKING_SERVICE_URL: http://booking-service:8082
+      AI_SERVICE_URL: http://ai-service:8083
+      ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      - auth-service
+      - booking-service
+      - ai-service
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres-data:

@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: booking-service
+  datasource:
+    # Defaults to an in-memory H2 database so the service runs with zero setup.
+    # Docker Compose / production set DB_URL to a PostgreSQL database instead.
+    url: ${DB_URL:jdbc:h2:mem:bookingdb;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+app:
+  seed-demo-bookings: ${SEED_DEMO_BOOKINGS:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

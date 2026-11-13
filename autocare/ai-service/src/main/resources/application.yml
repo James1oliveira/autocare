@@ -1,0 +1,26 @@
+server:
+  port: ${PORT:8083}
+
+spring:
+  application:
+    name: ai-service
+  ai:
+    openai:
+      # Without a key the service still works, using the offline keyword search.
+      api-key: ${OPENAI_API_KEY:not-set}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+          temperature: 0.3
+      embedding:
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+app:
+  booking-service-url: ${BOOKING_SERVICE_URL:http://localhost:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
